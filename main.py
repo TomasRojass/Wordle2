@@ -1,64 +1,70 @@
 import random
 import time
+import threading
 
 import pygame
 import sys
 
 from square import Square
 from communcation_socket import CommuncationSocket
+from gamestate import Gamestate
 
-# Initialize Pygame
-pygame.init()
-comm = CommuncationSocket("127.0.0.1", 8080)
-comm.connect()
-
-# Constants
 WORD_LEN = 5
-font = pygame.font.Font(None, 36)  # You can adjust the font size
-
 WIDTH, HEIGHT = 600, 810
 FPS = 60
-
 SMALL_SQUARE_X_OFFSET = 80
 SMALL_SQUARE_Y_OFFSET = 580
-
-# Colors
 BLACK = (43, 43, 43)
-
-# Initialize screen
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("WARDOL")
-clock = pygame.time.Clock()
-
-# initialize words
-with open("palabras.txt", "r") as f:
-    palabras = f.read().split("\n")
-
-allowed_words = [i.upper() for i in palabras]
-print(allowed_words)
-
-
-def send_word(word):
-    print(word)
+WHITE = (255, 255, 255)
 
 
 def parse_states(msg):
-    res = [i["status"] for i in msg["content"]["letters"]]
-    res2 = []
-    for i in res:
+    status_per_letter = [i["status"] for i in msg["letters"]]
+    res = []
+    for i in status_per_letter:
         if i == "correct":
-            res2.append("green")
+            res.append("green")
         elif i == "amarillo":
-            res2.append("yellow")
+            res.append("yellow")
         elif i == "incorrecto":
-            res2.append("gray")
-    return res2
+            res.append("gray")
+    return res
 
 
-# Function to draw squares with different colors
+def clear_squares(squares):
+    for i in squares:
+        i.letter = " "
+        i.color = "blank"
+
+
+def constant_read(comm_socket):
+    while True:
+        comm_socket.receive()
+        print("hi")
 
 
 def main():
+    # Initialize Pygame
+    pygame.init()
+    comm = CommuncationSocket("127.0.0.1", 8080)
+    comm.connect()
+    threading.Thread(target=constant_read, args=[comm]).start()
+    print("past")
+
+    # Constants
+    font = pygame.font.Font(None, 36)  # You can adjust the font size
+
+    # Initialize screen
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("WARDOL")
+    clock = pygame.time.Clock()
+
+    # initialize words
+    with open("palabras.txt", "r") as f:
+        palabras = f.read().split("\n")
+
+    allowed_words = [i.upper() for i in palabras]
+
     current_try = 0
     this_word_index = 0
 
@@ -79,6 +85,8 @@ def main():
     for sq, let in zip(small_squares, "QWERTYUIOPASDFGHJKLZXCVBNM"):
         sq.letter = let
         small_squares_by_letter[let] = sq
+
+    game_state = Gamestate()
 
     # game loop
     while True:
@@ -116,18 +124,16 @@ def main():
                                 current_try += 1
 
                                 # Send to the server for processing
-                                # send_word(word)
-                                msg = comm.send_and_receive("Attempt", word.lower())
-                                print(msg)
+                                comm.send("Attempt", word.lower())
 
-                                # parse different messages
-                                if msg["type"] == "AttemptResponse":
-                                    states = parse_states(msg)
-                                elif msg["type"] == "EndTurn": #TODO cuando gana quiero que venga el estado de las letras
-                                    states = ["green", "green", "green", "green", "green"]
-                                else:
-                                    raise ValueError(f"MSG TYPE: {msg['type']}")
+                                while True: # wait for the response. It's ok to be blocking since it's just milliseconds
+                                    try:
+                                        msg = comm.queue_responses.pop()
+                                        break
+                                    except IndexError:
+                                        pass
 
+                                states = parse_states(msg)
                                 for i in range(WORD_LEN):
                                     # Paint the squares according to the received states
                                     this_square = squares[first_index + i]
@@ -159,6 +165,13 @@ def main():
                 text_rect = text.get_rect(center=i.pygame_object.center)
                 screen.blit(text, text_rect)
 
+        # Draw gamestate
+
+        text_this_word_index = font.render(str(game_state.content), True, (255, 255, 255))  # White color
+        text_rect = text_this_word_index.get_rect(center=(10, 10))
+        screen.blit(text_this_word_index, text_rect)
+
+        """
         # DEBUG DRAWS
         text_this_word_index = font.render(str(this_word_index), True, (255, 255, 255))  # White color
         text_rect = text_this_word_index.get_rect(center=(10, 10))
@@ -167,6 +180,7 @@ def main():
         text_current_try = font.render(str(current_try), True, (255, 255, 255))  # White color
         text_rect = text_current_try.get_rect(center=(10, 50))
         screen.blit(text_current_try, text_rect)
+        """
 
         # Update the display
         pygame.display.flip()
