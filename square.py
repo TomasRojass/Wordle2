@@ -3,16 +3,8 @@ import pygame
 
 class Square:
 
-    def __init__(self, xpos=0, ypos=0, color="gray", xoffset=100, yoffset=40, width=75, height=75):
+    def __init__(self, xpos=0, ypos=0, color="gray", xoffset=100, yoffset=40, width=75, height=75, big_left_offset=100):
         # constants
-        """
-        self.possible_colors = {
-            "blank": (96, 96, 96),
-            "yellow": (193, 174, 95),
-            "green": (84, 139, 76),
-            "gray": (150, 150, 150)
-        }
-        """
 
         self.possible_colors = {
             "gray": (80, 80, 80),
@@ -30,7 +22,7 @@ class Square:
         self.rgb = self.possible_colors[self.color]
         self.xpos = xpos
         self.ypos = ypos
-        self.x = self.xpos * (self.width + self.padding) + xoffset
+        self.x = self.xpos * (self.width + self.padding) + xoffset + big_left_offset
         self.y = self.ypos * (self.height + self.padding) + yoffset
         self.letter = " "
 

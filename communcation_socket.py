@@ -32,8 +32,9 @@ class CommuncationSocket:
         self.sock.sendall(mensaje_json.encode())
 
     def _parse(self, tipo, contenido):
-        print(tipo, contenido)
         if tipo == "AttemptResponse":
             self.queue_responses.append(contenido)
-        elif tipo == "GameState":
+            print(tipo, contenido)
+        elif tipo == "GameStatus":
             self.gamestate = contenido
+            print(tipo, contenido)
