@@ -150,8 +150,13 @@ func main() {
 	fmt.Println("Palabra: ", word)
 
 	go sendStatus()
-	winner := <-endTurnChan
 
-	fmt.Println("El ganador es: ", winner)
+	for i := 0; i < players; i++ {
+		<-endTurnChan
+	}
+
+	winner := "winner"
+	fmt.Printf("El ganador es: %s, presiona cualquier tecla para finalizar", winner)
+	fmt.Scanf("%d", &players)
 	broadcast(Message{Type: "EndTurn", Content: winner})
 }
