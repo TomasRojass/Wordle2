@@ -42,6 +42,23 @@ def constant_read(comm_socket):
         print("leyo!")
 
 
+def restart():
+    current_try = 0
+    this_word_index = 0
+
+
+def black_overlay():
+    """
+    Esto esta aca pa no perderlo pq asi ta feo
+    """
+    # Create a semi-transparent black surface
+    black_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    black_surface.fill((0, 0, 0, 128))  # 128 for R, G, B, and alpha (transparency)
+
+    return black_surface
+    # Blit the black surface onto the main screen
+
+
 def main():
     # Initialize Pygame
     pygame.init()
@@ -63,9 +80,6 @@ def main():
 
     allowed_words = [i.upper() for i in palabras]
 
-    current_try = 0
-    this_word_index = 0
-
     # initialize squares
     squares = [Square(x, y, "blank") for y in range(6) for x in range(5)]
 
@@ -84,9 +98,18 @@ def main():
         sq.letter = let
         small_squares_by_letter[let] = sq
 
+    current_try = 0
+    this_word_index = 0
+    reset = False
 
     # game loop
     while True:
+        if reset:
+            time.sleep(3)
+            current_try = 0
+            this_word_index = 0
+            clear_squares(squares)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -115,7 +138,6 @@ def main():
                             first_index = current_try * WORD_LEN
                             word = "".join([squares[i].letter for i in range(first_index, first_index + WORD_LEN)])
 
-
                             if word in allowed_words:
                                 this_word_index = 0
                                 current_try += 1
@@ -123,7 +145,7 @@ def main():
                                 # Send to the server for processing
                                 comm.send("Attempt", word.lower())
 
-                                while True: # wait for the response. It's ok to be blocking since it's just milliseconds
+                                while True:  # wait for the response. It's ok to be blocking since it's just milliseconds
                                     try:
                                         msg = comm.queue_responses.pop()
                                         break
@@ -167,6 +189,10 @@ def main():
         text_this_word_index = font.render(str(comm.gamestate), True, (255, 255, 255))  # White color
         text_rect = text_this_word_index.get_rect(center=(10, 10))
         screen.blit(text_this_word_index, text_rect)
+
+        # Overlay negro para ponerle cartelitos arriba
+        if False:
+            screen.blit(black_overlay(), (0, 0))
 
         """
         # DEBUG DRAWS

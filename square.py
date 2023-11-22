@@ -5,14 +5,6 @@ class Square:
 
     def __init__(self, xpos=0, ypos=0, color="gray", xoffset=100, yoffset=40, width=75, height=75):
         # constants
-        """
-        self.possible_colors = {
-            "blank": (96, 96, 96),
-            "yellow": (193, 174, 95),
-            "green": (84, 139, 76),
-            "gray": (150, 150, 150)
-        }
-        """
 
         self.possible_colors = {
             "gray": (80, 80, 80),
