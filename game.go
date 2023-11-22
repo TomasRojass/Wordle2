@@ -14,8 +14,9 @@ type LetterAttempt struct {
 }
 
 type WordAttempt struct {
-	Letters    []LetterAttempt `json:"letters"`
-	FinishTurn bool            `json:"finishTurn"`
+	Letters     []LetterAttempt `json:"letters"`
+	Score       int
+	CorrectWord bool `json:"finishTurn"`
 }
 
 func GenerateWord() (string, error) {
@@ -40,14 +41,17 @@ func GenerateWord() (string, error) {
 }
 
 func ProcessAttempt(word string, attemptWord string) WordAttempt {
-	result := WordAttempt{Letters: []LetterAttempt{}, FinishTurn: false}
+	occurrences := []byte{}
+	result := WordAttempt{Letters: []LetterAttempt{}, CorrectWord: false}
 	var status string
 	incorrectFlag := false
 	for i := 0; i < len(attemptWord); i++ {
 		if attemptWord[i] == word[i] {
 			status = "correct"
+			occurrences = append(occurrences, attemptWord[i])
 		} else if strings.Contains(word, string(attemptWord[i])) {
 			status = "amarillo"
+			occurrences = append(occurrences, attemptWord[i])
 			incorrectFlag = true
 		} else {
 			status = "incorrecto"
@@ -57,9 +61,8 @@ func ProcessAttempt(word string, attemptWord string) WordAttempt {
 	}
 
 	if !incorrectFlag {
-		result.FinishTurn = true
+		result.CorrectWord = true
 	}
 
 	return result
 }
-
