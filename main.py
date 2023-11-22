@@ -4,11 +4,13 @@ import time
 import pygame
 import sys
 
-import wordlist
 from square import Square
+from communcation_socket import CommuncationSocket
 
 # Initialize Pygame
 pygame.init()
+comm = CommuncationSocket("127.0.0.1", 8080)
+comm.connect()
 
 # Constants
 WORD_LEN = 5
@@ -35,13 +37,22 @@ with open("palabras.txt", "r") as f:
 allowed_words = [i.upper() for i in palabras]
 print(allowed_words)
 
+
 def send_word(word):
     print(word)
 
 
-def receive_states():
-    res = [random.choice(("gray", "green", "yellow")) for i in range(WORD_LEN)]
-    return res
+def parse_states(msg):
+    res = [i["status"] for i in msg["content"]["letters"]]
+    res2 = []
+    for i in res:
+        if i == "correct":
+            res2.append("green")
+        elif i == "amarillo":
+            res2.append("yellow")
+        elif i == "incorrecto":
+            res2.append("gray")
+    return res2
 
 
 # Function to draw squares with different colors
@@ -105,11 +116,20 @@ def main():
                                 current_try += 1
 
                                 # Send to the server for processing
-                                send_word(word)
+                                # send_word(word)
+                                msg = comm.send_and_receive("Attempt", word.lower())
+                                print(msg)
 
-                                # Paint the squares according to the received states
-                                states = receive_states()
+                                # parse different messages
+                                if msg["type"] == "AttemptResponse":
+                                    states = parse_states(msg)
+                                elif msg["type"] == "EndTurn": #TODO cuando gana quiero que venga el estado de las letras
+                                    states = ["green", "green", "green", "green", "green"]
+                                else:
+                                    raise ValueError(f"MSG TYPE: {msg['type']}")
+
                                 for i in range(WORD_LEN):
+                                    # Paint the squares according to the received states
                                     this_square = squares[first_index + i]
                                     this_square.color = states[i]
 

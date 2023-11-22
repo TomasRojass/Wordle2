@@ -1,7 +1,7 @@
 import socket
 import json
 
-class communcation_socket:
+class CommuncationSocket:
     def __init__(self, host, port):
         self.host = host
         self.port = port
