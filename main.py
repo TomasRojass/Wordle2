@@ -7,7 +7,6 @@ import sys
 
 from square import Square
 from communcation_socket import CommuncationSocket
-from gamestate import Gamestate
 
 WORD_LEN = 5
 WIDTH, HEIGHT = 600, 810
@@ -40,7 +39,7 @@ def clear_squares(squares):
 def constant_read(comm_socket):
     while True:
         comm_socket.receive()
-        print("hi")
+        print("leyo!")
 
 
 def main():
@@ -49,7 +48,6 @@ def main():
     comm = CommuncationSocket("127.0.0.1", 8080)
     comm.connect()
     threading.Thread(target=constant_read, args=[comm]).start()
-    print("past")
 
     # Constants
     font = pygame.font.Font(None, 36)  # You can adjust the font size
@@ -86,7 +84,6 @@ def main():
         sq.letter = let
         small_squares_by_letter[let] = sq
 
-    game_state = Gamestate()
 
     # game loop
     while True:
@@ -117,7 +114,7 @@ def main():
 
                             first_index = current_try * WORD_LEN
                             word = "".join([squares[i].letter for i in range(first_index, first_index + WORD_LEN)])
-                            print(word)
+
 
                             if word in allowed_words:
                                 this_word_index = 0
@@ -167,7 +164,7 @@ def main():
 
         # Draw gamestate
 
-        text_this_word_index = font.render(str(game_state.content), True, (255, 255, 255))  # White color
+        text_this_word_index = font.render(str(comm.gamestate), True, (255, 255, 255))  # White color
         text_rect = text_this_word_index.get_rect(center=(10, 10))
         screen.blit(text_this_word_index, text_rect)
 
