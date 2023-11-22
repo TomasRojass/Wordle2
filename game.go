@@ -50,11 +50,11 @@ func ProcessAttempt(word string, attemptWord string) WordAttempt {
 			status = "correct"
 			occurrences = append(occurrences, attemptWord[i])
 		} else if strings.Contains(word, string(attemptWord[i])) {
-			status = "amarillo"
+			status = "yellow"
 			occurrences = append(occurrences, attemptWord[i])
 			incorrectFlag = true
 		} else {
-			status = "incorrecto"
+			status = "incorrect"
 			incorrectFlag = true
 		}
 		result.Letters = append(result.Letters, LetterAttempt{Letter: attemptWord[i], Status: status})
