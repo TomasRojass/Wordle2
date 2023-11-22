@@ -15,20 +15,21 @@ type Message struct {
 
 type User struct {
 	Name     string        `json:"name"`
+	Turn     int           `json:"turn"`
 	Score    int           `json:"score"`
 	Attempts []WordAttempt `json:"attempts"`
 }
 
 type GameStatus struct {
-	Status string
-	Users  map[net.Conn]User
+	Status string            `json:"status"`
+	Users  map[net.Conn]User `json:"users"`
 }
 
 var (
-	users  = make(map[net.Conn]User)
-	mutex  sync.Mutex
-	word   string
-	status string
+	users      = make(map[net.Conn]User)
+	mutex      sync.Mutex
+	word       string
+	gameStatus = "Starting"
 )
 
 func sendMessage(conn net.Conn, message Message) {
@@ -52,7 +53,12 @@ func sendStatus() {
 	for {
 		select {
 		case <-ticker.C:
-			broadcast(Message{Type: "GameStatus", Content: GameStatus{Status: status, Users: users}})
+			usersStatus := []User{}
+			for _, user := range users {
+				usersStatus = append(usersStatus, user)
+			}
+			broadcast(Message{Type: "GameStatus", Content: usersStatus})
+			fmt.Println("enviando: ", usersStatus)
 		}
 	}
 }
@@ -97,7 +103,14 @@ func handleConnection(conn net.Conn, endTurnChan chan string) {
 
 			result := ProcessAttempt(word, content)
 
-			if result.FinishTurn {
+			mutex.Lock()
+			user := users[conn]
+			user.Turn++
+			user.Score += result.Score
+			users[conn] = user
+			mutex.Unlock()
+
+			if result.CorrectWord {
 				endTurnChan <- users[conn].Name
 				return
 			}
