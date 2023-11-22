@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 )
 
 type Message struct {
@@ -18,10 +19,16 @@ type User struct {
 	Attempts []WordAttempt `json:"attempts"`
 }
 
+type GameStatus struct {
+	Status string
+	Users  map[net.Conn]User
+}
+
 var (
-	connections = make(map[net.Conn]User)
-	mutex       sync.Mutex
-	word        string
+	users  = make(map[net.Conn]User)
+	mutex  sync.Mutex
+	word   string
+	status string
 )
 
 func sendMessage(conn net.Conn, message Message) {
@@ -29,6 +36,24 @@ func sendMessage(conn net.Conn, message Message) {
 	err := encoder.Encode(message)
 	if err != nil {
 		fmt.Println("Error al enviar el mensaje:", err)
+	}
+}
+
+func broadcast(message Message) {
+	for conn := range users {
+		sendMessage(conn, message)
+	}
+}
+
+func sendStatus() {
+	intervalo := time.Second
+	ticker := time.NewTicker(intervalo)
+
+	for {
+		select {
+		case <-ticker.C:
+			broadcast(Message{Type: "GameStatus", Content: GameStatus{Status: status, Users: users}})
+		}
 	}
 }
 
@@ -40,7 +65,7 @@ func handleConnection(conn net.Conn, endTurnChan chan string) {
 
 	user := User{Name: "", Score: 0, Attempts: []WordAttempt{}}
 	mutex.Lock()
-	connections[conn] = user
+	users[conn] = user
 	mutex.Unlock()
 
 	for {
@@ -58,9 +83,9 @@ func handleConnection(conn net.Conn, endTurnChan chan string) {
 				return
 			}
 			mutex.Lock()
-			user := connections[conn]
+			user := users[conn]
 			user.Name = name
-			connections[conn] = user
+			users[conn] = user
 			mutex.Unlock()
 			sendMessage(conn, Message{Type: "RegisterResponse", Content: "Usuario creado correctamente"})
 		case "Attempt":
@@ -73,7 +98,7 @@ func handleConnection(conn net.Conn, endTurnChan chan string) {
 			result := ProcessAttempt(word, content)
 
 			if result.FinishTurn {
-				endTurnChan <- connections[conn].Name
+				endTurnChan <- users[conn].Name
 				return
 			}
 
@@ -114,7 +139,5 @@ func main() {
 	winner := <-endTurnChan
 
 	fmt.Println("El ganador es: ", winner)
-	for conn := range connections {
-		sendMessage(conn, Message{Type: "EndTurn", Content: winner})
-	}
+	broadcast(Message{Type: "EndTurn", Content: winner})
 }
