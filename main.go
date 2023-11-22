@@ -136,6 +136,7 @@ func main() {
 	word, _ = GenerateWord()
 	fmt.Println("Palabra: ", word)
 
+	go sendStatus()
 	winner := <-endTurnChan
 
 	fmt.Println("El ganador es: ", winner)
