@@ -1,6 +1,8 @@
 import random
 import time
 import threading
+import tkinter as tk
+from tkinter import simpledialog
 
 import pygame
 import sys
@@ -16,6 +18,12 @@ SMALL_SQUARE_X_OFFSET = 80
 SMALL_SQUARE_Y_OFFSET = 580
 BLACK = (43, 43, 43)
 WHITE = (255, 255, 255)
+GREEN = (84, 139, 76)
+
+
+def show_input_dialog():
+    user_input = simpledialog.askstring("Username", "Enter username:")
+    return user_input
 
 
 def parse_states(msg):
@@ -31,7 +39,7 @@ def parse_states(msg):
     return res
 
 
-def parse_gamestate(msg, font):
+def parse_gamestate(msg, font, user):
     initial_y = 20
     res = []
 
@@ -43,8 +51,9 @@ def parse_gamestate(msg, font):
     res.append((text_object, text_rect))
 
     for index, line in enumerate(msg):
+        color = GREEN if user == line['name'] else WHITE
         text = f"{line['name']}: {line['score']}"
-        text_object = font.render(text, True, WHITE)  # White color
+        text_object = font.render(text, True, color)
         text_rect = text_object.get_rect(topleft=(10, 30 * (index + 1) + initial_y))
         res.append((text_object, text_rect))
 
@@ -84,12 +93,15 @@ def black_overlay():
 
 
 def main():
+    # Before pygame even launches
+    username = show_input_dialog()
+
     # Initialize Pygame
     pygame.init()
     comm = CommuncationSocket("127.0.0.1", 8080)
     comm.connect()
     threading.Thread(target=constant_read, args=[comm]).start()
-    comm.send("Register", "Mastro")
+    comm.send("Register", username)
 
     # Constants
     font = pygame.font.Font(None, 36)  # You can adjust the font size
@@ -212,7 +224,7 @@ def main():
 
         # Draw gamestate
 
-        for text_object, text_rect in parse_gamestate(comm.gamestate, font):
+        for text_object, text_rect in parse_gamestate(comm.gamestate, font, username):
             screen.blit(text_object, text_rect)
             print(text_object, text_rect)
 
