@@ -32,9 +32,9 @@ def parse_states(msg):
     for i in status_per_letter:
         if i == "correct":
             res.append("green")
-        elif i == "amarillo":
+        elif i == "yellow":
             res.append("yellow")
-        elif i == "incorrecto":
+        elif i == "incorrect":
             res.append("gray")
     return res
 
