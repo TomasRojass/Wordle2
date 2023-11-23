@@ -110,12 +110,12 @@ func handleConnection(conn net.Conn, endTurnChan chan string) {
 			users[conn] = user
 			mutex.Unlock()
 
+			sendMessage(conn, Message{Type: "AttemptResponse", Content: result})
 			if result.CorrectWord {
 				endTurnChan <- users[conn].Name
 				return
 			}
 
-			sendMessage(conn, Message{Type: "AttemptResponse", Content: result})
 		default:
 			fmt.Println("Tipo de mensaje no reconocido:", msg.Type)
 		}

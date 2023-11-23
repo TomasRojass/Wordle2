@@ -62,6 +62,7 @@ func ProcessAttempt(word string, attemptWord string) WordAttempt {
 
 	if !incorrectFlag {
 		result.CorrectWord = true
+		result.Score = 1
 	}
 
 	return result
